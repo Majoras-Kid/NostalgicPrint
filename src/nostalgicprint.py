@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pdf2image import convert_from_path
 import img2pdf
+import PyPDF2
 from PIL import *
 import image_slicer
 import os
@@ -78,7 +79,26 @@ def read_pdf_page_by_page(filename,user_dpi=300):
         directory_content_after_merge = os.listdir(os.getcwd())
         directory_content_after_merge.sort()
         f.write(img2pdf.convert([i for i in directory_content_after_merge if i.endswith(".png")]))
+        os.chdir("..")
 
+    rotate_pages_for_print("./final_manual.pdf")
+
+def rotate_pages_for_print(filename):
+
+    pdf_in = open(filename, 'rb')
+    pdf_reader = PyPDF2.PdfFileReader(pdf_in)
+    pdf_writer = PyPDF2.PdfFileWriter()
+
+    for pagenum in range(pdf_reader.numPages):
+        page = pdf_reader.getPage(pagenum)
+        if pagenum % 2:
+            page.rotateClockwise(180)
+        pdf_writer.addPage(page)
+
+    pdf_out = open("./final_manual.pdf", 'wb')
+    pdf_writer.write(pdf_out)
+    pdf_out.close()
+    pdf_in.close()
 
 def split_image(filename):
     print("\t[+] Splicing %s" % filename)

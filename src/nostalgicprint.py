@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pdf2image import convert_from_path
+import img2pdf
 from PIL import *
 import image_slicer
 import os
@@ -13,7 +14,7 @@ import numpy as np
 
 new_image_name = "page_"
 image_subfolder = "./temp/"
-
+directory_content = ""
 def save_page_as_pdf(page,i):
     global new_image_name
     print("\t[+] Saving page %d as %s" % (i, "page_"+str("%02d" % i)+".png") )
@@ -21,6 +22,7 @@ def save_page_as_pdf(page,i):
 
 
 def read_pdf_page_by_page(filename,user_dpi=300):
+    global directory_content
     if os.path.isdir(image_subfolder):
         print("[+] Storing images in folder: %s" % image_subfolder)
     else:
@@ -55,7 +57,10 @@ def read_pdf_page_by_page(filename,user_dpi=300):
     print("\t[!] Needed time to slice images: %.2ds (%.2dm)" %(end - start, ((end - start)/60)) )
 
     print("[+] Re-sorting and merging images")
-    directory_content = os.listdir(image_subfolder).sort()
+
+    directory_content = os.listdir(image_subfolder)
+    directory_content.sort()
+    print("[+] Type(directory_content): ", type(directory_content))
     print("[+] Directory_content: ",directory_content)
     print("[+] Len(directory_content", len(directory_content) )
     print("[-] range: ", (len(directory_content) // 2))
@@ -65,14 +70,15 @@ def read_pdf_page_by_page(filename,user_dpi=300):
         print("[-] Number of images no multiple of 2 - cannot merge")
         sys.exit(-1)
 
-    half_directory_count = len(directory_content) // 2
-    for i in range((len(directory_content) // 2)):
-        page_left = image_subfolder + directory_content[i] #image_subfolder + new_image_name + str("%02d" % i) + ".png" 
-        page_right = image_subfolder + directory_content[len(directory_content) -i-1] #image_subfolder + new_image_name + str("%02d" % (half_directory_count-i)) + ".png"
-        merge_images(page_left,page_right)
-        
-        if i > 1:
-            return
+    Parallel(n_jobs=num_cores)(delayed(open_file_and_merge)(i) for (i) in range((len(directory_content) // 2)))
+
+    print("[+] Merging images into new_manual")
+    with open("final_manual.pdf", "wb") as f:
+        os.chdir(image_subfolder)
+        directory_content_after_merge = os.listdir(os.getcwd())
+        directory_content_after_merge.sort()
+        f.write(img2pdf.convert([i for i in directory_content_after_merge if i.endswith(".png")]))
+
 
 def split_image(filename):
     print("\t[+] Splicing %s" % filename)
@@ -80,10 +86,18 @@ def split_image(filename):
     #print("\t[+] Removing file: %s" % filename)
     os.remove(filename)
 
+def open_file_and_merge(i):
+    global directory_content
+    page_left = image_subfolder + directory_content[i] #image_subfolder + new_image_name + str("%02d" % i) + ".png" 
+    page_right = image_subfolder + directory_content[len(directory_content) -i-1] #image_subfolder + new_image_name + str("%02d" % (half_directory_count-i)) + ".png"
+    if i%2 ==1:
+        merge_images(page_left,page_right,i)
+    else:
+        merge_images(page_right,page_left,i)
 # thanks to dermen for this solution
 # https://stackoverflow.com/questions/30227466/combine-several-images-horizontally-with-python
-def merge_images(page_left,page_right):
-    print("[+] Merging: ('%s' , '%s')" % (page_left,page_right))
+def merge_images(page_left,page_right,i):
+    print("\t[+] Merging: ('%s' , '%s')" % (page_left,page_right))
 
 
     list_im = [page_left,page_right]
@@ -94,12 +108,14 @@ def merge_images(page_left,page_right):
 
     # save that beautiful picture
     imgs_comb = Image.fromarray( imgs_comb)
-    imgs_comb.save(image_subfolder + "merge_test.png" )    
+    imgs_comb.save(image_subfolder + "merge_test"+ str("%02d" % i) +".png" )    
+    os.remove(page_left)
+    os.remove(page_right)
 
     # for a vertical stacking it is simple: use vstack
     #imgs_comb = np.vstack( (np.asarray( i.resize(min_shape) ) for i in imgs ) )
     #imgs_comb = PIL.Image.fromarray( imgs_comb)
     #imgs_comb.save( 'Trifecta_vertical.jpg' )
 
-read_pdf_page_by_page("./test2.pdf",user_dpi=10)
+read_pdf_page_by_page("./test2.pdf",user_dpi=100)
 #split_image("./page_1.png")

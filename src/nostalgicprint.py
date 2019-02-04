@@ -29,6 +29,7 @@ def argparser():
     parser = argparse.ArgumentParser(description='Exploit for vulnerability.')
     parser.add_argument('-f', '--file',type=argparse.FileType('r', encoding='UTF-8'), required=True, help='defines name of the manual file to be manipulated')
     parser.add_argument('-d', '--dpi', type=int,default=100,help='defines DPI of images extracted from manual file')
+    
     args = parser.parse_args()
     
     manual_file_name = args.file.name
@@ -92,18 +93,21 @@ def read_pdf_page_by_page(filename,user_dpi=300):
     Parallel(n_jobs=num_cores)(delayed(open_file_and_merge)(i) for (i) in range((len(directory_content) // 2)))
 
     print("[+] Merging images into new_manual")
-    with open("final_manual.pdf", "wb") as f:
+    with open("manual.pdf", "wb") as f:
         os.chdir(image_subfolder)
         directory_content_after_merge = os.listdir(os.getcwd())
         directory_content_after_merge.sort()
+        #print("[+] directory_content_after_merge",directory_content_after_merge)
         f.write(img2pdf.convert([i for i in directory_content_after_merge if i.endswith(".png")]))
-        os.chdir("..")
+        f.close()
+    os.chdir("..")
 
-    rotate_pages_for_print("./final_manual.pdf")
+    rotate_pages_for_print("./manual.pdf")
 
     print("[+] Deleting temporary files in %s" % image_subfolder)
-    start = time.time()
+
     
+    start = time.time()
     for the_file in os.listdir(image_subfolder):
         file_path = os.path.join(image_subfolder, the_file)
         try:
@@ -111,9 +115,9 @@ def read_pdf_page_by_page(filename,user_dpi=300):
                 os.unlink(file_path)
             #elif os.path.isdir(file_path): shutil.rmtree(file_path)
         except Exception as e:
-            print(e)
-    
+            print(e)    
     end = time.time()
+    os.remove("./manual.pdf")
     print("\t[!] Needed time to delete temporary files: %.2ds (%.2dm)" %(end - start, ((end - start)/60)) )
 
 
@@ -129,10 +133,11 @@ def rotate_pages_for_print(filename):
             page.rotateClockwise(180)
         pdf_writer.addPage(page)
 
-    pdf_out = open(filename, 'wb')
+    pdf_out = open("final_manual.pdf", 'wb')
     pdf_writer.write(pdf_out)
     pdf_out.close()
     pdf_in.close()
+    
 
 def split_image(filename):
     print("\t[+] Slicing %s" % filename)
@@ -148,12 +153,12 @@ def open_file_and_merge(i):
         merge_images(page_left,page_right,i)
     else:
         merge_images(page_right,page_left,i)
+
+
 # thanks to dermen for this solution
 # https://stackoverflow.com/questions/30227466/combine-several-images-horizontally-with-python
 def merge_images(page_left,page_right,i):
     #print("\t[+] Merging: ('%s' , '%s')" % (page_left,page_right))
-
-
     list_im = [page_left,page_right]
     imgs    = [ Image.open(i) for i in list_im ]
     # pick the image which is the smallest, and resize the others to match it (can be arbitrary image shape here)

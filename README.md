@@ -1,5 +1,5 @@
 # NostalgicPrint
-This program aims to help reprinting manuals for your Nintendo game distributed on the Nintendo website e.g.[1]
+This program aims to help reprinting manuals for your Nintendo games, distributed on the Nintendo website e.g.[1]
 
 While these files are greate to use on your device, printing them can be a beautiful addition to your games collection. The problem with manual PDF files is that the page order is not correct for printing double sided.
 

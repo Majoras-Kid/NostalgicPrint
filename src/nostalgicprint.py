@@ -83,10 +83,6 @@ def read_pdf_page_by_page(filename,user_dpi=300):
 
     directory_content = os.listdir(image_subfolder)
     directory_content.sort()
-    print("[+] Type(directory_content): ", type(directory_content))
-    print("[+] Directory_content: ",directory_content)
-    print("[+] Len(directory_content", len(directory_content) )
-    print("[-] range: ", (len(directory_content) // 2))
 
     #check if merge works correctly by checking if image number is multiple of 2
     if len(directory_content) % 2 != 0:
@@ -104,6 +100,22 @@ def read_pdf_page_by_page(filename,user_dpi=300):
         os.chdir("..")
 
     rotate_pages_for_print("./final_manual.pdf")
+
+    print("[+] Deleting temporary files in %s" % image_subfolder)
+    start = time.time()
+    
+    for the_file in os.listdir(image_subfolder):
+        file_path = os.path.join(image_subfolder, the_file)
+        try:
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+            #elif os.path.isdir(file_path): shutil.rmtree(file_path)
+        except Exception as e:
+            print(e)
+    
+    end = time.time()
+    print("\t[!] Needed time to delete temporary files: %.2ds (%.2dm)" %(end - start, ((end - start)/60)) )
+
 
 def rotate_pages_for_print(filename):
 
@@ -123,7 +135,7 @@ def rotate_pages_for_print(filename):
     pdf_in.close()
 
 def split_image(filename):
-    print("\t[+] Splicing %s" % filename)
+    print("\t[+] Slicing %s" % filename)
     image_slicer.slice(filename,2)
     #print("\t[+] Removing file: %s" % filename)
     os.remove(filename)
@@ -139,7 +151,7 @@ def open_file_and_merge(i):
 # thanks to dermen for this solution
 # https://stackoverflow.com/questions/30227466/combine-several-images-horizontally-with-python
 def merge_images(page_left,page_right,i):
-    print("\t[+] Merging: ('%s' , '%s')" % (page_left,page_right))
+    #print("\t[+] Merging: ('%s' , '%s')" % (page_left,page_right))
 
 
     list_im = [page_left,page_right]

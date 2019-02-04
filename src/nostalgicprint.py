@@ -11,11 +11,33 @@ from joblib import Parallel, delayed
 import time
 from shutil import copyfile
 import numpy as np
+import argparse
+
+
 
 
 new_image_name = "page_"
 image_subfolder = "./temp/"
 directory_content = ""
+manual_file_name = ""
+dpi_value = 100
+
+def argparser():
+    global manual_file_name
+    global dpi_value
+    
+    parser = argparse.ArgumentParser(description='Exploit for vulnerability.')
+    parser.add_argument('-f', '--file',type=argparse.FileType('r', encoding='UTF-8'), required=True, help='defines name of the manual file to be manipulated')
+    parser.add_argument('-d', '--dpi', type=int,default=100,help='defines DPI of images extracted from manual file')
+    args = parser.parse_args()
+    
+    manual_file_name = args.file.name
+    dpi_value = args.dpi
+
+    print("[+] Setting manual file name to: %s" % manual_file_name)
+    print("[+] Setting DPI to %d" % dpi_value)
+
+
 def save_page_as_pdf(page,i):
     global new_image_name
     print("\t[+] Saving page %d as %s" % (i, "page_"+str("%02d" % i)+".png") )
@@ -95,7 +117,7 @@ def rotate_pages_for_print(filename):
             page.rotateClockwise(180)
         pdf_writer.addPage(page)
 
-    pdf_out = open("./final_manual.pdf", 'wb')
+    pdf_out = open(filename, 'wb')
     pdf_writer.write(pdf_out)
     pdf_out.close()
     pdf_in.close()
@@ -137,5 +159,5 @@ def merge_images(page_left,page_right,i):
     #imgs_comb = PIL.Image.fromarray( imgs_comb)
     #imgs_comb.save( 'Trifecta_vertical.jpg' )
 
-read_pdf_page_by_page("./test2.pdf",user_dpi=100)
-#split_image("./page_1.png")
+argparser()
+read_pdf_page_by_page(manual_file_name,dpi_value)

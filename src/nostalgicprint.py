@@ -198,6 +198,9 @@ def merge_images(page_left,page_right,i):
     os.remove(page_left)
     os.remove(page_right)
 
+def main():
+    argparser()
+    read_pdf_page_by_page(manual_file_name,dpi_value)
 
-argparser()
-read_pdf_page_by_page(manual_file_name,dpi_value)
+if __name__ == '__main__':
+    main()
